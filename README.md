@@ -127,7 +127,7 @@ ln -s /<pathToLib>/RasteriCEr/lib/gl/ /<pathToArduinoLibDir>/Arduino/libraries/I
 # Design
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
 ![flow diagram](pictures/flow.png)
-For the s_cmd_axis command specification, please refer ```rtl/RasteriCEr/RegisterAndDescriptorDefines.v```
+For the s_cmd_axis command specification, please refer ```rtl/RasteriCEr/RegisterAndDescriptorDefines.vh```
 ## Driver
 The driver is build with the following components:
 - ```IceGLWrapper```: Wraps the IceGL API to a C API.

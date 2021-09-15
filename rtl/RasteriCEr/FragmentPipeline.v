@@ -16,8 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-`include "RasterizerDefines.v"
-`include "RegisterAndDescriptorDefines.v"
+`include "RasterizerDefines.vh"
+`include "RegisterAndDescriptorDefines.vh"
 
 function [15:0] truncate16;
     input [31:0] in;

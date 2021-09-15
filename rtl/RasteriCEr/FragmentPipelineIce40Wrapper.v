@@ -35,7 +35,7 @@
 //  c           -           b           -           a      <- No Collision, because during write back no read request is issued
 // It is important that the pipeline contains an even number of steps between ReadReq and WriteBack
 
-`include "RasterizerDefines.v"
+`include "RasterizerDefines.vh"
 module FragmentPipelineIce40Wrapper
 #(
     parameter FRAMEBUFFER_INDEX_WIDTH = 14
