@@ -101,7 +101,7 @@ module DisplayControllerSpi #(
     reg [$clog2(PIXEL * 2):0] streamAddr;
 
     reg regSck;
-    reg [CLOCK_DIV - 1 : 0] serClockDif;
+    reg [CLOCK_DIV - 1 : 0] serClockDiv;
     reg enableSck;
 
     if (CLOCK_DIV == 0)
@@ -126,11 +126,18 @@ module DisplayControllerSpi #(
             mosi <= 0;
             enableSck <= 0;
             regSck <= 0;
-            serClockDif <= 0;
+            if (CLOCK_DIV != 0) 
+            begin
+                serClockDiv <= 0;    
+            end
         end
         else
         begin
-            serClockDif <= serClockDif + 1;
+            if (CLOCK_DIV != 0) 
+            begin
+                serClockDiv <= serClockDiv + 1;   
+            end
+            
             // Write buffer interface
             case (stateAxis)
                 AXIS_WAIT_FOR_START:
@@ -206,7 +213,7 @@ module DisplayControllerSpi #(
                 end
                 WAIT_FOR_DATA:
                 begin
-                    if (serClockDif == 0)
+                    if ((CLOCK_DIV == 0) || (serClockDiv == 0))
                     begin
                         regSck <= 0;
                         if (!serializerCacheEmpty)
@@ -236,13 +243,13 @@ module DisplayControllerSpi #(
                     end
                     else
                     begin
-                        if (serClockDif == 0)
+                        if (serClockDiv == 0)
                         begin
                             regSck <= 0;
                             mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                             serCount <= serCount + 1;
                         end
-                        else if (serClockDif[CLOCK_DIV - 1])
+                        else if (serClockDiv[CLOCK_DIV - 1])
                         begin
                             regSck <= 1;
                             
