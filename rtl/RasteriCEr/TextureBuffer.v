@@ -97,7 +97,7 @@ module TextureBuffer #(
     endgenerate
 
 
-    always 
+    always @*
     begin
         case (mode)
             `OP_TEXTURE_STREAM_MODE_32x32: // 32x32px texture

@@ -17,8 +17,8 @@
 
 `timescale 1ns / 1ps
 module DisplayControllerSpi #(
-    parameter FAST_MODE = 0,
-    parameter PIXEL = (128*128)
+    parameter PIXEL = (128*128),
+    parameter CLOCK_DIV = 2 // Divides clk to slowdown sck. 0 means nohting, 1 means half the clock, 2 only one quarter and so on.
 ) (
     input   wire        reset,
     input   wire        clk,
@@ -101,9 +101,10 @@ module DisplayControllerSpi #(
     reg [$clog2(PIXEL * 2):0] streamAddr;
 
     reg regSck;
+    reg [CLOCK_DIV - 1 : 0] serClockDif;
     reg enableSck;
 
-    if (FAST_MODE)
+    if (CLOCK_DIV == 0)
     begin
         assign sck = (enableSck) ? !clk : 0;
     end
@@ -125,10 +126,11 @@ module DisplayControllerSpi #(
             mosi <= 0;
             enableSck <= 0;
             regSck <= 0;
+            serClockDif <= 0;
         end
         else
         begin
-
+            serClockDif <= serClockDif + 1;
             // Write buffer interface
             case (stateAxis)
                 AXIS_WAIT_FOR_START:
@@ -189,7 +191,7 @@ module DisplayControllerSpi #(
                 begin
                 end 
             endcase
-            
+
             // Serializer
             case (stateSerializer)
                 WAIT_FOR_START:
@@ -204,21 +206,24 @@ module DisplayControllerSpi #(
                 end
                 WAIT_FOR_DATA:
                 begin
-                    regSck <= 0;
-                    if (!serializerCacheEmpty)
+                    if (serClockDif == 0)
                     begin
-                        enableSck <= 1;
-                        serializerCacheWorking <= serializerCache;
-                        serCount <= 1; // It is one because it is pushing now also one bit out
-                        mosi <= serializerCache[SERIALIZER_WORDWIDH - 1];
-                        
-                        serializerCacheEmpty <= 1; // Start the next request
-                        stateSerializer <= SERIALIZE_DATA;
+                        regSck <= 0;
+                        if (!serializerCacheEmpty)
+                        begin
+                            enableSck <= 1;
+                            serializerCacheWorking <= serializerCache;
+                            serCount <= 1; // It is one because it is pushing now also one bit out
+                            mosi <= serializerCache[SERIALIZER_WORDWIDH - 1];
+                            
+                            serializerCacheEmpty <= 1; // Start the next request
+                            stateSerializer <= SERIALIZE_DATA;
+                        end
                     end
                 end
                 SERIALIZE_DATA:
                 begin
-                    if (FAST_MODE)
+                    if (CLOCK_DIV == 0)
                     begin
                         mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                         serCount <= serCount + 1;
@@ -231,13 +236,13 @@ module DisplayControllerSpi #(
                     end
                     else
                     begin
-                        if (regSck)
+                        if (serClockDif == 0)
                         begin
                             regSck <= 0;
                             mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                             serCount <= serCount + 1;
                         end
-                        else
+                        else if (serClockDif[CLOCK_DIV - 1])
                         begin
                             regSck <= 1;
                             

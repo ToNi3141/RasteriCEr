@@ -148,7 +148,7 @@ module CommandParser #(
                     OP_TRIANGLE_STREAM:
                     begin
                         /* verilator lint_off WIDTH */
-                        streamCounter <= {'0, s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_IMM_SIZE - DATABUS_SCALE_FACTOR_LOG2]};
+                        streamCounter <= s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_IMM_SIZE - DATABUS_SCALE_FACTOR_LOG2];
                         /* verilator lint_off WIDTH */
                         state <= EXEC_TRIANGLE_STREAM;
                     end
@@ -189,7 +189,7 @@ module CommandParser #(
                     OP_RENDER_CONFIG:
                     begin
                         /* verilator lint_off WIDTH */
-                        streamCounter <= {'0, s_cmd_axis_tdata[3 : 0]};
+                        streamCounter <= s_cmd_axis_tdata[3 : 0];
                         /* verilator lint_off WIDTH */
                         state <= EXEC_RENDER_CONFIG;
                     end

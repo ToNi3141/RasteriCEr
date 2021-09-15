@@ -127,7 +127,7 @@ module FragmentPipeline
     wire depthTestLess = depthTestFragmentVal < depthTestDepthBufferVal;
     wire depthTestGreater = depthTestFragmentVal > depthTestDepthBufferVal;
     wire depthTestEqual = depthTestFragmentVal == depthTestDepthBufferVal;
-    always 
+    always @*
     begin
         case (confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE])
             ALWAYS:
@@ -157,7 +157,7 @@ module FragmentPipeline
     wire        alphaTestLess = alphaTestFragmentVal < alphaTestRefVal;
     wire        alphaTestGreater = alphaTestFragmentVal > alphaTestRefVal;
     wire        alphaTestEqual = alphaTestFragmentVal == alphaTestRefVal;
-    always 
+    always @*
     begin
         case (confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE])
             ALWAYS:

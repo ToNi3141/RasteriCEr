@@ -17,6 +17,8 @@
 
 module top
 (
+    // clk
+    input  wire clk100,
     // Reset
     input  wire resetn_in,
 
@@ -43,6 +45,9 @@ module top
     // output wire dbgStreamingState2,
     // output wire dbgStreamingState3
 );
+`define X_RESOLUTION 240
+`define Y_RESOLUTION 320
+`define Y_LINE_RESOLUTION 64
     parameter X_RESOLUTION = `X_RESOLUTION;
     parameter Y_RESOLUTION = `Y_RESOLUTION;
     parameter Y_LINE_RESOLUTION = `Y_LINE_RESOLUTION;
@@ -52,8 +57,8 @@ module top
     wire clk;
     reg resetn;
 
-    reg display_mosi_out;
-    reg display_sck_out;
+    wire display_mosi_out;
+    wire display_sck_out;
     reg display_mux_reg;
 
     ///////////////////////////
@@ -72,12 +77,10 @@ module top
     ///////////////////////////
     // Clock Instantiation
     ///////////////////////////
-    // Source = 48MHz, CLKHF_DIV = 2’b00 : 00 = div1, 01 = div2, 10 = div4, 11 = div8 ; Default = “00”
-    SB_HFOSC #(.CLKHF_DIV("0b01")) osc (
-        .CLKHFPU(1'b1),
-        .CLKHFEN(1'b1),
-        .CLKHF(clk)
-    );
+    wire pllLocked;
+    clk_wiz_0 inst (clk, 0, pllLocked, clk100); // Convert to a 90MHz clock
+    // assign clk = clk100; // This can work, but probably this hurts some timing requirements
+    // assign pllLocked = 0;
 
     ///////////////////////////
     // Regs and wires
@@ -110,9 +113,9 @@ module top
         .startTransfer(!display_mux_reg),
         .transferRunning(transferRunning)
     );
-    defparam lcd.CLOCK_DIV = 0; // Caution, normally the SPI displays work with a maximum frequency of 15.5 MHz. 
-                                // A CLOCK_DIV of 0 means, that we increase the clock to 24MHz.
     defparam lcd.PIXEL = X_RESOLUTION * Y_LINE_RESOLUTION;
+    defparam lcd.CLOCK_DIV = 2; // Caution, normally the SPI displays work with a maximum frequency of 15.5 MHz. 
+                                // A CLOCK_DIV of 2 means that the 90MHz clock is divided by four which results in a frequency of 22.5 MHz.
 
     RasteriCEr #(.X_RESOLUTION(X_RESOLUTION),
                  .Y_RESOLUTION(Y_RESOLUTION),
@@ -160,7 +163,7 @@ module top
 
     always @(posedge clk)
     begin
-        if (resetn_in)
+        if (resetn_in & pllLocked)
         begin
             resetn <= 1;
         end

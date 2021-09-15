@@ -90,27 +90,27 @@ Info: Max frequency for clock 'serial_sck$SB_IO_IN_$glb_clk': 102.01 MHz (PASS a
 ```
 ### Pin out 
 __PMOD A command signals__
-| Signal  | IceBreaker  | Raspberry Pi Pico | Arduino |
-|---------|-------------|-------------------|---------|
-| resetn  | 46          | 12                | 6       |
-| mosi    | 2           | 3                 | 11      |
-| sck     | 4           | 2                 | 10      |
-| cs      | 48          | 11                | 5       |
-| cts     | 44          | 13                | 7       |
-| tft mux | 3           | 10                | 4       |
-| tft cs  | 45          | 9                 | 9       |
-| tft dc  | 47          | 8                 | 8       |
+| Signal  | PMOD  | IceBreaker  | Raspberry Pi Pico | Arduino |
+|---------|-------|-------------|-------------------|---------|
+| resetn  | 9     | 46          | 12                | 6       |
+| mosi    | 2     | 2           | 3                 | 11      |
+| sck     | 1     | 4           | 2                 | 10      |
+| cs      | 8     | 48          | 11                | 5       |
+| cts     | 10    | 44          | 13                | 7       |
+| tft mux | 7     | 3           | 10                | 4       |
+| tft cs  | 4     | 45          | 9                 | 9       |
+| tft dc  | 3     | 47          | 8                 | 8       |
 
 If the ```tft mux``` is asserted, it will multiplex the ```mosi```, ```sck```, ```tft cs``` and ```tft dc``` signals through the PMOD B signals. The MCU can directly communicate with the display, configure it, initialize it and so on.
 
 __PMOD B display signals__
-| Signal  | IceBreaker  |
-|---------|-------------|
-| sck     | 43          |
-| mosi    | 38          |
-| reset   | 36          |
-| dc      | 32          |
-| cs      | 42          |
+| Signal  | PMOD  | IceBreaker  |
+|---------|-------|-------------|
+| sck     | 1     | 43          |
+| mosi    | 2     | 38          |
+| reset   | 8     | 36          |
+| dc      | 9     | 32          |
+| cs      | 7     | 42          |
 
 __Output of the example.ino__
 ![example screenshot](screenshots/IceBreaker.png)
