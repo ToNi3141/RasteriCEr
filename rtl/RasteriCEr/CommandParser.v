@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "RegisterAndDescriptorDefines.vh"
-
 module CommandParser #(
     parameter CMD_STREAM_WIDTH = 16,
     parameter TEXTURE_STREAM_WIDTH = 16
@@ -65,6 +63,7 @@ module CommandParser #(
     // Debug
     output wire [ 3 : 0]  dbgStreamState
 );
+`include "RegisterAndDescriptorDefines.vh"
     localparam DATABUS_SCALE_FACTOR = (CMD_STREAM_WIDTH / 8);
     localparam DATABUS_SCALE_FACTOR_LOG2 = $clog2(DATABUS_SCALE_FACTOR);
 

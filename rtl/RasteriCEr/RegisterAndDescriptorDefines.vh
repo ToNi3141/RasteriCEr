@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`ifndef REGISTER_AND_DESCRIPTOR_DEFINES_V_
-`define REGISTER_AND_DESCRIPTOR_DEFINES_V_
+
+
+
 
 // Every Operation and Argument has to be aligned by CommandParser::CMD_STREAM_WIDTH.
 // For instance, when CMD_STREAM_WIDTH is configured with 16, then every Operaton 
@@ -32,16 +33,16 @@
 //  +---------------------------------------+
 //  | 4 OP | 12 bit immediate value         |
 //  +---------------------------------------+
-parameter OP_NOP_STREAM = 0;
-parameter OP_TEXTURE_STREAM = 1;
-parameter OP_RENDER_CONFIG = 2;
-parameter OP_FRAMEBUFFER = 3;
-parameter OP_TRIANGLE_STREAM = 4;
+localparam OP_NOP_STREAM = 0;
+localparam OP_TEXTURE_STREAM = 1;
+localparam OP_RENDER_CONFIG = 2;
+localparam OP_FRAMEBUFFER = 3;
+localparam OP_TRIANGLE_STREAM = 4;
 
-parameter OP_POS = 12;
-parameter OP_SIZE = 4;
-parameter OP_IMM_POS = 0;
-parameter OP_IMM_SIZE = 12;
+localparam OP_POS = 12;
+localparam OP_SIZE = 4;
+localparam OP_IMM_POS = 0;
+localparam OP_IMM_SIZE = 12;
 
 ////////////////////////////
 // Operation Immediate Values
@@ -57,9 +58,9 @@ parameter OP_IMM_SIZE = 12;
 //  | 4 bit OP | 4 bit reserved | 4 bit mode | 4 bit size |
 //  +-----------------------------------------------------+
 // The size uses also the OP_TEXTURE_STREAM_MODE defines.
-parameter TEXTURE_STREAM_SIZE_POS = 0;
-parameter TEXTURE_STREAM_MODE_POS = 4;
-parameter TEXTURE_STREAM_IMM_SIZE = 4;
+localparam TEXTURE_STREAM_SIZE_POS = 0;
+localparam TEXTURE_STREAM_MODE_POS = 4;
+localparam TEXTURE_STREAM_IMM_SIZE = 4;
 `define OP_TEXTURE_STREAM_MODE_32x32   4'b0001 // When used for size: expects after the command 32x32x2 bytes of texture data
 `define OP_TEXTURE_STREAM_MODE_64x64   4'b0010 // When used for size: expects after the command 64x64x2 bytes of texture data
 `define OP_TEXTURE_STREAM_MODE_128x128 4'b0100 // When used for size: expects after the command 128x128x2 bytes of texture data
@@ -69,22 +70,22 @@ parameter TEXTURE_STREAM_IMM_SIZE = 4;
 //  +-----------------------------+
 //  | 4 bit OP | 12 register addr |
 //  +-----------------------------+
-parameter OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 0;
-parameter OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
-parameter OP_RENDER_CONFIG_REG1 = 2;
-parameter OP_RENDER_CONFIG_REG2 = 3;
-parameter OP_RENDER_CONFIG_TEX_ENV_COLOR = 4;
+localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 0;
+localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
+localparam OP_RENDER_CONFIG_REG1 = 2;
+localparam OP_RENDER_CONFIG_REG2 = 3;
+localparam OP_RENDER_CONFIG_TEX_ENV_COLOR = 4;
 
 // OP_FRAMEBUFFER
 //  +----------------------------------------------------------------------------------------------------------------------------------+
 //  | 4 bit OP | 6 bit reserved | 1 bit depth buffer select | 1 bit color buffer select | 2 bit reserved | 1 bit memset | 1 bit commit |
 //  +----------------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
-parameter OP_FRAMEBUFFER_COMMIT_POS = 0; // Streams the frame buffer (color buffer) content via the framebuffer_axis 
-parameter OP_FRAMEBUFFER_MEMSET_POS = 1; // Clears the frame buffer with the configured clear color / depth value
+localparam OP_FRAMEBUFFER_COMMIT_POS = 0; // Streams the frame buffer (color buffer) content via the framebuffer_axis 
+localparam OP_FRAMEBUFFER_MEMSET_POS = 1; // Clears the frame buffer with the configured clear color / depth value
 // The selected buffer where to execute the command above (multiple selections are possible)
-parameter OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS = 4;
-parameter OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
+localparam OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS = 4;
+localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 
 
 ////////////////////////////
@@ -92,45 +93,45 @@ parameter OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 ////////////////////////////
 // OP_TRIANGLE_STREAM 
 // Triangle Descriptor, each value containts 4 bytes.
-parameter TRIANGLE_CONFIGURATION = 0;
-parameter BB_START = 1; // S15.0, S15.0
-parameter BB_END = 2; // S15.0, S15.0
-parameter INC_W0 = 3; // Sn.m
-parameter INC_W1 = 4; // Sn.m
-parameter INC_W2 = 5; // Sn.m
-parameter INC_W0_X = 6; // Sn.m
-parameter INC_W1_X = 7; // Sn.m
-parameter INC_W2_X = 8; // Sn.m
-parameter INC_W0_Y = 9; // Sn.m
-parameter INC_W1_Y = 10; // Sn.m
-parameter INC_W2_Y = 11; // Sn.m
-parameter INC_TEX_S = 12; // S1.30
-parameter INC_TEX_T = 13; // S1.30
-parameter INC_TEX_S_X = 14; // S1.30
-parameter INC_TEX_T_X = 15; // S1.30
-parameter INC_TEX_S_Y = 16; // S1.30
-parameter INC_TEX_T_Y = 17; // S1.30
-parameter INC_DEPTH_W = 18; // S1.30
-parameter INC_DEPTH_W_X = 19; // S1.30
-parameter INC_DEPTH_W_Y = 20; // S1.30
-parameter PADDING_1 = 21;
-parameter PADDING_2 = 22;
-parameter PADDING_3 = 23;
-parameter TRIANGLE_DATA_SET_SIZE_32 = INC_DEPTH_W_Y + 1; // Max command port width: 32 bit
-parameter TRIANGLE_DATA_SET_SIZE_64 = PADDING_1 + 1; // Max command port width: 64 bit
-parameter TRIANGLE_DATA_SET_SIZE_256 = PADDING_3 + 1; // Max command port width: 256 bit
+localparam TRIANGLE_CONFIGURATION = 0;
+localparam BB_START = 1; // S15.0, S15.0
+localparam BB_END = 2; // S15.0, S15.0
+localparam INC_W0 = 3; // Sn.m
+localparam INC_W1 = 4; // Sn.m
+localparam INC_W2 = 5; // Sn.m
+localparam INC_W0_X = 6; // Sn.m
+localparam INC_W1_X = 7; // Sn.m
+localparam INC_W2_X = 8; // Sn.m
+localparam INC_W0_Y = 9; // Sn.m
+localparam INC_W1_Y = 10; // Sn.m
+localparam INC_W2_Y = 11; // Sn.m
+localparam INC_TEX_S = 12; // S1.30
+localparam INC_TEX_T = 13; // S1.30
+localparam INC_TEX_S_X = 14; // S1.30
+localparam INC_TEX_T_X = 15; // S1.30
+localparam INC_TEX_S_Y = 16; // S1.30
+localparam INC_TEX_T_Y = 17; // S1.30
+localparam INC_DEPTH_W = 18; // S1.30
+localparam INC_DEPTH_W_X = 19; // S1.30
+localparam INC_DEPTH_W_Y = 20; // S1.30
+localparam PADDING_1 = 21;
+localparam PADDING_2 = 22;
+localparam PADDING_3 = 23;
+localparam TRIANGLE_DATA_SET_SIZE_32 = INC_DEPTH_W_Y + 1; // Max command port width: 32 bit
+localparam TRIANGLE_DATA_SET_SIZE_64 = PADDING_1 + 1; // Max command port width: 64 bit
+localparam TRIANGLE_DATA_SET_SIZE_256 = PADDING_3 + 1; // Max command port width: 256 bit
 `define GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(x) (x <= 32 ? TRIANGLE_DATA_SET_SIZE_32 : \
                                             x <= 64 ? TRIANGLE_DATA_SET_SIZE_64 : \
                                             x <= 256 ? TRIANGLE_DATA_SET_SIZE_256 : \
                                             0)
 
 // BB_START and BB_END defines
-parameter BB_X_POS = 0;
-parameter BB_Y_POS = 16;
+localparam BB_X_POS = 0;
+localparam BB_Y_POS = 16;
 // TRIANGLE_CONFIGURATION defines
-parameter TRIANGLE_STATIC_COLOR_POS = 16;
-parameter ENABLE_W_INTERPOLATION_POS = 0;
-parameter ENABLE_TEXTURE_INTERPOLATION_POS = 1;
+localparam TRIANGLE_STATIC_COLOR_POS = 16;
+localparam ENABLE_W_INTERPOLATION_POS = 0;
+localparam ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 
 // OP_TEXTURE_STREAM
 // Texture data, size is dependet on the immediate value, for instance,
@@ -155,96 +156,96 @@ parameter ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 //  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 //  | 1 bit color mask R | 1 bit color mask G | 1 bit color mask B | 1 bit color mask A | 1 bit depth mask | 4 bit A ref | 3 bit A func | 3 bit depth func | 1 bit enable depth test |
 //  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-parameter REG1_ENABLE_DEPTH_TEST_POS = 0;
-parameter REG1_ENABLE_DEPTH_TEST_SIZE = 1;
-parameter REG1_DEPTH_TEST_FUNC_POS = REG1_ENABLE_DEPTH_TEST_POS + REG1_ENABLE_DEPTH_TEST_SIZE;
-parameter REG1_DEPTH_TEST_FUNC_SIZE = 3;
-parameter REG1_ALPHA_TEST_FUNC_POS = REG1_DEPTH_TEST_FUNC_POS + REG1_DEPTH_TEST_FUNC_SIZE;
-parameter REG1_ALPHA_TEST_FUNC_SIZE = 3;
-parameter REG1_ALPHA_TEST_REF_VALUE_POS = REG1_ALPHA_TEST_FUNC_POS + REG1_ALPHA_TEST_FUNC_SIZE;
-parameter REG1_ALPHA_TEST_REF_VALUE_SIZE = 4;
-parameter REG1_DEPTH_MASK_POS = REG1_ALPHA_TEST_REF_VALUE_POS + REG1_ALPHA_TEST_REF_VALUE_SIZE;
-parameter REG1_DEPTH_MASK_SIZE = 1;
-parameter REG1_COLOR_MASK_A_POS = REG1_DEPTH_MASK_POS + REG1_DEPTH_MASK_SIZE;
-parameter REG1_COLOR_MASK_A_SIZE = 1;
-parameter REG1_COLOR_MASK_B_POS = REG1_COLOR_MASK_A_POS + REG1_COLOR_MASK_A_SIZE;
-parameter REG1_COLOR_MASK_B_SIZE = 1;
-parameter REG1_COLOR_MASK_G_POS = REG1_COLOR_MASK_B_POS + REG1_COLOR_MASK_B_SIZE;
-parameter REG1_COLOR_MASK_G_SIZE = 1;
-parameter REG1_COLOR_MASK_R_POS = REG1_COLOR_MASK_G_POS + REG1_COLOR_MASK_G_SIZE;
-parameter REG1_COLOR_MASK_R_SIZE = 1;
+localparam REG1_ENABLE_DEPTH_TEST_POS = 0;
+localparam REG1_ENABLE_DEPTH_TEST_SIZE = 1;
+localparam REG1_DEPTH_TEST_FUNC_POS = REG1_ENABLE_DEPTH_TEST_POS + REG1_ENABLE_DEPTH_TEST_SIZE;
+localparam REG1_DEPTH_TEST_FUNC_SIZE = 3;
+localparam REG1_ALPHA_TEST_FUNC_POS = REG1_DEPTH_TEST_FUNC_POS + REG1_DEPTH_TEST_FUNC_SIZE;
+localparam REG1_ALPHA_TEST_FUNC_SIZE = 3;
+localparam REG1_ALPHA_TEST_REF_VALUE_POS = REG1_ALPHA_TEST_FUNC_POS + REG1_ALPHA_TEST_FUNC_SIZE;
+localparam REG1_ALPHA_TEST_REF_VALUE_SIZE = 4;
+localparam REG1_DEPTH_MASK_POS = REG1_ALPHA_TEST_REF_VALUE_POS + REG1_ALPHA_TEST_REF_VALUE_SIZE;
+localparam REG1_DEPTH_MASK_SIZE = 1;
+localparam REG1_COLOR_MASK_A_POS = REG1_DEPTH_MASK_POS + REG1_DEPTH_MASK_SIZE;
+localparam REG1_COLOR_MASK_A_SIZE = 1;
+localparam REG1_COLOR_MASK_B_POS = REG1_COLOR_MASK_A_POS + REG1_COLOR_MASK_A_SIZE;
+localparam REG1_COLOR_MASK_B_SIZE = 1;
+localparam REG1_COLOR_MASK_G_POS = REG1_COLOR_MASK_B_POS + REG1_COLOR_MASK_B_SIZE;
+localparam REG1_COLOR_MASK_G_SIZE = 1;
+localparam REG1_COLOR_MASK_R_POS = REG1_COLOR_MASK_G_POS + REG1_COLOR_MASK_G_SIZE;
+localparam REG1_COLOR_MASK_R_SIZE = 1;
 
 // OP_RENDER_CONFIG_REG2
 //  +------------------------------------------------------------------------------------------------------------------------------------+
 //  | 2 bit reserved | 1 bit tex clamp t | 1 bit tex clamp s | 4 bit blend d | 4 bit blend s | 3 bit tex env | 1 bit en persp correction |
 //  +------------------------------------------------------------------------------------------------------------------------------------+
-parameter REG2_PERSPECTIVE_CORRECT_TEXTURE_POS = 0;
-parameter REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE = 1;
-parameter REG2_TEX_ENV_FUNC_POS = REG2_PERSPECTIVE_CORRECT_TEXTURE_POS + REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE;
-parameter REG2_TEX_ENV_FUNC_SIZE = 3;
-parameter REG2_BLEND_FUNC_SFACTOR_POS = REG2_TEX_ENV_FUNC_POS + REG2_TEX_ENV_FUNC_SIZE;
-parameter REG2_BLEND_FUNC_SFACTOR_SIZE = 4;
-parameter REG2_BLEND_FUNC_DFACTOR_POS = REG2_BLEND_FUNC_SFACTOR_POS + REG2_BLEND_FUNC_SFACTOR_SIZE;
-parameter REG2_BLEND_FUNC_DFACTOR_SIZE = 4;
-parameter REG2_TEX_CLAMP_S_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
-parameter REG2_TEX_CLAMP_S_SIZE = 1;
-parameter REG2_TEX_CLAMP_T_POS = REG2_TEX_CLAMP_S_POS + REG2_TEX_CLAMP_S_SIZE;
-parameter REG2_TEX_CLAMP_T_SIZE = 1;
-// parameter REG2_LOGIC_OP_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
-// parameter REG2_LOGIC_OP_SIZE = 4;
+localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_POS = 0;
+localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE = 1;
+localparam REG2_TEX_ENV_FUNC_POS = REG2_PERSPECTIVE_CORRECT_TEXTURE_POS + REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE;
+localparam REG2_TEX_ENV_FUNC_SIZE = 3;
+localparam REG2_BLEND_FUNC_SFACTOR_POS = REG2_TEX_ENV_FUNC_POS + REG2_TEX_ENV_FUNC_SIZE;
+localparam REG2_BLEND_FUNC_SFACTOR_SIZE = 4;
+localparam REG2_BLEND_FUNC_DFACTOR_POS = REG2_BLEND_FUNC_SFACTOR_POS + REG2_BLEND_FUNC_SFACTOR_SIZE;
+localparam REG2_BLEND_FUNC_DFACTOR_SIZE = 4;
+localparam REG2_TEX_CLAMP_S_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
+localparam REG2_TEX_CLAMP_S_SIZE = 1;
+localparam REG2_TEX_CLAMP_T_POS = REG2_TEX_CLAMP_S_POS + REG2_TEX_CLAMP_S_SIZE;
+localparam REG2_TEX_CLAMP_T_SIZE = 1;
+// localparam REG2_LOGIC_OP_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
+// localparam REG2_LOGIC_OP_SIZE = 4;
 
 // Depth and Alpha func defines
-parameter ALWAYS = 0;
-parameter NEVER = 1;
-parameter LESS = 2;
-parameter EQUAL = 3;
-parameter LEQUAL = 4;
-parameter GREATER = 5;
-parameter NOTEQUAL = 6;
-parameter GEQUAL = 7;
+localparam ALWAYS = 0;
+localparam NEVER = 1;
+localparam LESS = 2;
+localparam EQUAL = 3;
+localparam LEQUAL = 4;
+localparam GREATER = 5;
+localparam NOTEQUAL = 6;
+localparam GEQUAL = 7;
 
 // Tex Env and Blend func defines
-parameter DISABLE = 0;
-parameter REPLACE = 1;
-parameter MODULATE = 2;
-parameter DECAL = 3;
-parameter BLEND = 4;
-parameter ADD = 5;
+localparam DISABLE = 0;
+localparam REPLACE = 1;
+localparam MODULATE = 2;
+localparam DECAL = 3;
+localparam BLEND = 4;
+localparam ADD = 5;
 
 // D and S factor defines
-parameter ZERO = 0;
-parameter ONE = 1;
-parameter DST_COLOR = 2;
-parameter SRC_COLOR = 3;
-parameter ONE_MINUS_DST_COLOR = 4;
-parameter ONE_MINUS_SRC_COLOR = 5;
-parameter SRC_ALPHA = 6;
-parameter ONE_MINUS_SRC_ALPHA = 7;
-parameter DST_ALPHA = 8;
-parameter ONE_MINUS_DST_ALPHA = 9;
-parameter SRC_ALPHA_SATURATE = 10;
+localparam ZERO = 0;
+localparam ONE = 1;
+localparam DST_COLOR = 2;
+localparam SRC_COLOR = 3;
+localparam ONE_MINUS_DST_COLOR = 4;
+localparam ONE_MINUS_SRC_COLOR = 5;
+localparam SRC_ALPHA = 6;
+localparam ONE_MINUS_SRC_ALPHA = 7;
+localparam DST_ALPHA = 8;
+localparam ONE_MINUS_DST_ALPHA = 9;
+localparam SRC_ALPHA_SATURATE = 10;
 
 // Logic op defines (currently not implemented)
-// parameter CLEAR = 0;
-// parameter SET = 1;
-// parameter COPY = 2;
-// parameter COPY_INVERTED = 3;
-// parameter NOOP = 4;
-// parameter INVERTED = 5;
-// parameter AND = 6;
-// parameter NAND = 7;
-// parameter OR = 8;
-// parameter NOR = 9;
-// parameter XOR = 10;
-// parameter EQUIV = 11;
-// parameter AND_REVERSE = 12;
-// parameter AND_INVERTED = 13;
-// parameter OR_REVERSE = 14;
-// parameter OR_INVERTE = 15;
+// localparam CLEAR = 0;
+// localparam SET = 1;
+// localparam COPY = 2;
+// localparam COPY_INVERTED = 3;
+// localparam NOOP = 4;
+// localparam INVERTED = 5;
+// localparam AND = 6;
+// localparam NAND = 7;
+// localparam OR = 8;
+// localparam NOR = 9;
+// localparam XOR = 10;
+// localparam EQUIV = 11;
+// localparam AND_REVERSE = 12;
+// localparam AND_INVERTED = 13;
+// localparam OR_REVERSE = 14;
+// localparam OR_INVERTE = 15;
 
 // Clamping
-parameter REPEAT = 0;
-parameter CLAMP_TO_EDGE = 1;
+localparam REPEAT = 0;
+localparam CLAMP_TO_EDGE = 1;
 
 // OP_RENDER_CONFIG_TEX_ENV_COLOR
 //  +---------------------------------------+
@@ -252,14 +253,11 @@ parameter CLAMP_TO_EDGE = 1;
 //  +---------------------------------------+
 
 // Color defines
-parameter COLOR_R_POS = 12;
-parameter COLOR_G_POS = 8;
-parameter COLOR_B_POS = 4;
-parameter COLOR_A_POS = 0;
-parameter COLOR_SUB_PIXEL_WIDTH = 4;
+localparam COLOR_R_POS = 12;
+localparam COLOR_G_POS = 8;
+localparam COLOR_B_POS = 4;
+localparam COLOR_A_POS = 0;
+localparam COLOR_SUB_PIXEL_WIDTH = 4;
 
 // OP_FRAMEBUFFER
 // Does not contain any arguments, just starts the framebuffer commit and clear processes
-
-
-`endif // REGISTER_AND_DESCRIPTOR_DEFINES_V_

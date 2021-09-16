@@ -43,6 +43,12 @@ module DisplayControllerSpi #(
 `define RAM_MODULE DualPortRam
 `endif
 
+    localparam COLOR_R_POS = 12;
+    localparam COLOR_G_POS = 8;
+    localparam COLOR_B_POS = 4;
+    localparam COLOR_A_POS = 0;
+    localparam COLOR_SUB_PIXEL_WIDTH = 4;
+
     // If the Colormode is 12 Bit, then the controller will send the pixel encoded in an RGB444 stream to the display.
     // If this mode is not selected, then the controller will convert the RGB444 color into an RGB565 color and will
     // then send a RGB565 stream to the display.

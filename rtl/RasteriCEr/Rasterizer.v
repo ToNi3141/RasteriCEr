@@ -15,9 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "RasterizerDefines.vh"
-`include "RegisterAndDescriptorDefines.vh"
-
 module Rasterizer
 #(
     // This is the fixed screen resolution. In a more advanced implementation, this could
@@ -51,6 +48,9 @@ module Rasterizer
     output reg                              m_axis_tlast,
     output reg  [FRAMEBUFFER_INDEX_WIDTH + RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata
 );
+`include "RasterizerDefines.vh"
+`include "RegisterAndDescriptorDefines.vh"
+
     localparam PARAMETER_WIDTH = 32;
     localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / PARAMETER_WIDTH;
     localparam X_BIT_WIDTH = $clog2(X_RESOLUTION) + 1;

@@ -35,7 +35,6 @@
 //  c           -           b           -           a      <- No Collision, because during write back no read request is issued
 // It is important that the pipeline contains an even number of steps between ReadReq and WriteBack
 
-`include "RasterizerDefines.vh"
 module FragmentPipelineIce40Wrapper
 #(
     parameter FRAMEBUFFER_INDEX_WIDTH = 14
@@ -78,6 +77,8 @@ module FragmentPipelineIce40Wrapper
     output wire        depthWriteEnable,
     output wire [15:0] depthOut
 );
+`include "RasterizerDefines.vh"
+`include "RegisterAndDescriptorDefines.vh"
     reg enablePipeline = 0;
     wire shaderFreeInst;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndexShaderInst;

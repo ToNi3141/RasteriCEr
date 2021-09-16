@@ -48,6 +48,8 @@ module TextureBuffer #(
 `else
 `define RAM_MODULE DualPortRam
 `endif
+`include "RegisterAndDescriptorDefines.vh"
+
     localparam SUB_PIXEL_WIDTH = 4;
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4;
     localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8);
