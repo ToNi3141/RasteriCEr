@@ -17,8 +17,8 @@
 
 `timescale 1ns / 1ps
 module DisplayControllerSpi #(
-    parameter FAST_MODE = 0,
-    parameter PIXEL = (128*128)
+    parameter PIXEL = (128*128),
+    parameter CLOCK_DIV = 2 // Divides clk to slowdown sck. 0 means nohting, 1 means half the clock, 2 only one quarter and so on.
 ) (
     input   wire        reset,
     input   wire        clk,
@@ -43,6 +43,12 @@ module DisplayControllerSpi #(
 `define RAM_MODULE DualPortRam
 `endif
 
+    localparam COLOR_R_POS = 12;
+    localparam COLOR_G_POS = 8;
+    localparam COLOR_B_POS = 4;
+    localparam COLOR_A_POS = 0;
+    localparam COLOR_SUB_PIXEL_WIDTH = 4;
+
     // If the Colormode is 12 Bit, then the controller will send the pixel encoded in an RGB444 stream to the display.
     // If this mode is not selected, then the controller will convert the RGB444 color into an RGB565 color and will
     // then send a RGB565 stream to the display.
@@ -56,6 +62,29 @@ module DisplayControllerSpi #(
     localparam WAIT_FOR_BUS = 1;
     localparam READ_DATA = 2;
     localparam WAIT_FOR_FIRST_BYTE = 3;
+
+    localparam AXIS_WAIT_FOR_START = 0;
+    localparam AXIS_TRANSFER = 1;
+
+    localparam WAIT_FOR_START = 0;
+    localparam WAIT_FOR_DATA = 1;
+    localparam SERIALIZE_DATA = 2;
+
+    reg [3:0] stateBufferReq;
+    reg [3:0] stateAxis;
+
+    reg [SERIALIZER_WORDWIDH - 1:0] serializerCache; // While the data is scanned out, this buffer is used to fetch new data
+    reg [SERIALIZER_WORDWIDH - 1:0] serializerCacheWorking; // This is the buffer where the data is scanned out
+    reg serializerCacheEmpty; // Signal that data is copied from the fbCache to serializerCacheWorking so that a new memory request can be started
+    
+    reg [3:0] stateSerializer;
+    reg [6:0] serCount;
+    reg [$clog2(PIXEL * 2):0] pixelCount;
+    reg [$clog2(PIXEL * 2):0] streamAddr;
+
+    reg regSck;
+    reg [CLOCK_DIV - 1 : 0] serClockDiv;
+    reg enableSck;
 
     wire [15:0]             memOut;
     wire [15:0]             memIn = s_axis_tdata;
@@ -79,31 +108,9 @@ module DisplayControllerSpi #(
     defparam mem.MEM_SIZE_BYTES = $clog2(PIXEL * 2); // Round size to the next bigger number of two size
     defparam mem.MEM_WIDTH = 16;
 
-
-    reg [3:0] stateBufferReq;
-    reg [3:0] stateAxis;
-
-    reg [SERIALIZER_WORDWIDH - 1:0] serializerCache; // While the data is scanned out, this buffer is used to fetch new data
-    reg [SERIALIZER_WORDWIDH - 1:0] serializerCacheWorking; // This is the buffer where the data is scanned out
-    reg serializerCacheEmpty; // Signal that data is copied from the fbCache to serializerCacheWorking so that a new memory request can be started
-    
     wire bufferClean = pixelCount == PIXEL;
 
-    localparam AXIS_WAIT_FOR_START = 0;
-    localparam AXIS_TRANSFER = 1;
-
-    localparam WAIT_FOR_START = 0;
-    localparam WAIT_FOR_DATA = 1;
-    localparam SERIALIZE_DATA = 2;
-    reg [3:0] stateSerializer;
-    reg [6:0] serCount;
-    reg [$clog2(PIXEL * 2):0] pixelCount;
-    reg [$clog2(PIXEL * 2):0] streamAddr;
-
-    reg regSck;
-    reg enableSck;
-
-    if (FAST_MODE)
+    if (CLOCK_DIV == 0)
     begin
         assign sck = (enableSck) ? !clk : 0;
     end
@@ -125,10 +132,18 @@ module DisplayControllerSpi #(
             mosi <= 0;
             enableSck <= 0;
             regSck <= 0;
+            if (CLOCK_DIV != 0) 
+            begin
+                serClockDiv <= 0;    
+            end
         end
         else
         begin
-
+            if (CLOCK_DIV != 0) 
+            begin
+                serClockDiv <= serClockDiv + 1;   
+            end
+            
             // Write buffer interface
             case (stateAxis)
                 AXIS_WAIT_FOR_START:
@@ -189,7 +204,7 @@ module DisplayControllerSpi #(
                 begin
                 end 
             endcase
-            
+
             // Serializer
             case (stateSerializer)
                 WAIT_FOR_START:
@@ -204,21 +219,24 @@ module DisplayControllerSpi #(
                 end
                 WAIT_FOR_DATA:
                 begin
-                    regSck <= 0;
-                    if (!serializerCacheEmpty)
+                    if ((CLOCK_DIV == 0) || (serClockDiv == 0))
                     begin
-                        enableSck <= 1;
-                        serializerCacheWorking <= serializerCache;
-                        serCount <= 1; // It is one because it is pushing now also one bit out
-                        mosi <= serializerCache[SERIALIZER_WORDWIDH - 1];
-                        
-                        serializerCacheEmpty <= 1; // Start the next request
-                        stateSerializer <= SERIALIZE_DATA;
+                        regSck <= 0;
+                        if (!serializerCacheEmpty)
+                        begin
+                            enableSck <= 1;
+                            serializerCacheWorking <= serializerCache;
+                            serCount <= 1; // It is one because it is pushing now also one bit out
+                            mosi <= serializerCache[SERIALIZER_WORDWIDH - 1];
+                            
+                            serializerCacheEmpty <= 1; // Start the next request
+                            stateSerializer <= SERIALIZE_DATA;
+                        end
                     end
                 end
                 SERIALIZE_DATA:
                 begin
-                    if (FAST_MODE)
+                    if (CLOCK_DIV == 0)
                     begin
                         mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                         serCount <= serCount + 1;
@@ -231,13 +249,13 @@ module DisplayControllerSpi #(
                     end
                     else
                     begin
-                        if (regSck)
+                        if (serClockDiv == 0)
                         begin
                             regSck <= 0;
                             mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                             serCount <= serCount + 1;
                         end
-                        else
+                        else if (serClockDiv[CLOCK_DIV - 1])
                         begin
                             regSck <= 1;
                             

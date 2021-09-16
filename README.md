@@ -5,6 +5,9 @@
   - [iCE40UP5K build details](#ice40up5k-build-details)
     - [Utilization](#utilization)
     - [Pin out](#pin-out)
+- [How to build for the Xilinx Artix-7 35 (Arty)](#how-to-build-for-the-xilinx-artix-7-35-arty)
+  - [Utilization](#utilization-1)
+- [How to build the simulation](#how-to-build-the-simulation)
 - [Add the driver to your IDE](#add-the-driver-to-your-ide)
 - [Design](#design)
   - [Driver](#driver)
@@ -35,7 +38,7 @@ First you have to install the following tools:
 
 Now execute the following steps
 ```
-git clone rasterizer
+git clone https://github.com/ToNi3141/RasteriCEr.git
 cd RasteriCEr/rtl/top/iCE40up5k
 make 
 make flash
@@ -90,30 +93,48 @@ Info: Max frequency for clock 'serial_sck$SB_IO_IN_$glb_clk': 102.01 MHz (PASS a
 ```
 ### Pin out 
 __PMOD A command signals__
-| Signal  | IceBreaker  | Raspberry Pi Pico | Arduino |
-|---------|-------------|-------------------|---------|
-| resetn  | 46          | 12                | 6       |
-| mosi    | 2           | 3                 | 11      |
-| sck     | 4           | 2                 | 10      |
-| cs      | 48          | 11                | 5       |
-| cts     | 44          | 13                | 7       |
-| tft mux | 3           | 10                | 4       |
-| tft cs  | 45          | 9                 | 9       |
-| tft dc  | 47          | 8                 | 8       |
+| Signal  | PMOD  | IceBreaker  | Raspberry Pi Pico | Arduino |
+|---------|-------|-------------|-------------------|---------|
+| resetn  | 9     | 46          | 12                | 6       |
+| mosi    | 2     | 2           | 3                 | 11      |
+| sck     | 1     | 4           | 2                 | 10      |
+| cs      | 8     | 48          | 11                | 5       |
+| cts     | 10    | 44          | 13                | 7       |
+| tft mux | 7     | 3           | 10                | 4       |
+| tft cs  | 4     | 45          | 9                 | 9       |
+| tft dc  | 3     | 47          | 8                 | 8       |
 
 If the ```tft mux``` is asserted, it will multiplex the ```mosi```, ```sck```, ```tft cs``` and ```tft dc``` signals through the PMOD B signals. The MCU can directly communicate with the display, configure it, initialize it and so on.
 
 __PMOD B display signals__
-| Signal  | IceBreaker  |
-|---------|-------------|
-| sck     | 43          |
-| mosi    | 38          |
-| reset   | 36          |
-| dc      | 32          |
-| cs      | 42          |
+| Signal  | PMOD  | IceBreaker  |
+|---------|-------|-------------|
+| sck     | 1     | 43          |
+| mosi    | 2     | 38          |
+| reset   | 8     | 36          |
+| dc      | 9     | 32          |
+| cs      | 7     | 42          |
 
 __Output of the example.ino__
 ![example screenshot](screenshots/IceBreaker.png)
+# How to build for the Xilinx Artix-7 35 (Arty)
+```
+cd rtl/top/Xilinx
+/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+```
+Note: Because you will probably use another vivado version. The build script uses a clock wizard which creates from the 100MHz oscillator on the Arty board a 90MHz clock. The design could probably also run with 100MHz and produce 100MPixel but that timing is really tight. As a quick and dirty solution, you can remove the ```clk_wiz_0``` from the ```build.tcl``` and ```top.v``` and use the 100MHz clock directly. It could work.
+
+By default it runs with __90MHz__ and renders with __90MPixel__. By side that, it uses the same configuration like the ice40 build and the same pin out (PMOD JA for the command signals and PMOD JB for the display).
+
+## Utilization
+![Utilization screenshot](screenshots/XilinxUtilization.png)
+
+# How to build the simulation
+The simulation uses Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa to generate the C++ Code.
+```
+cd rtl/top/Verilator
+make
+```
 # Add the driver to your IDE
 You can find under arduino/rasterizer an example how to use the driver. Before you can use the driver, you have to copy all files in the lib/gl directory into the arduino library directory (if you are using the Arduino IDE). If you use another IDE add this files to your build system.
 ```
@@ -127,7 +148,7 @@ ln -s /<pathToLib>/RasteriCEr/lib/gl/ /<pathToArduinoLibDir>/Arduino/libraries/I
 # Design
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
 ![flow diagram](pictures/flow.png)
-For the s_cmd_axis command specification, please refer ```rtl/RasteriCEr/RegisterAndDescriptorDefines.v```
+For the s_cmd_axis command specification, please refer ```rtl/RasteriCEr/RegisterAndDescriptorDefines.vh```
 ## Driver
 The driver is build with the following components:
 - ```IceGLWrapper```: Wraps the IceGL API to a C API.

@@ -15,43 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-`include "RasterizerDefines.v"
-`include "RegisterAndDescriptorDefines.v"
-
-function [15:0] truncate16;
-    input [31:0] in;
-    begin
-        truncate16 = in[0 +: 16];        
-    end
-endfunction
-
-function [23:0] truncate24;
-    input [31:0] in;
-    begin
-        truncate24 = in[0 +: 24];        
-    end
-endfunction
-
-function [15:0] clampTexture;
-    input [23:0] texCoord;
-    input [ 0:0] mode; 
-    begin
-        clampTexture = texCoord[0 +: 16];
-        if (mode == CLAMP_TO_EDGE)
-        begin
-            if (texCoord[23]) // Check if it lower than 0 by only checking the sign bit
-            begin
-                clampTexture = 0;
-            end
-            else if ((texCoord >> 15) != 0) // Check if it is greater than one by checking if the integer part is unequal to zero
-            begin
-                clampTexture = 16'h7fff;
-            end  
-        end
-    end
-endfunction
-
 module FragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
@@ -95,7 +58,43 @@ module FragmentPipeline
     output reg         depthWriteEnable,
     output reg  [15:0] depthOut
 );
-    parameter SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+`include "RasterizerDefines.vh"
+`include "RegisterAndDescriptorDefines.vh"
+
+    function [15:0] truncate16;
+        input [31:0] in;
+        begin
+            truncate16 = in[0 +: 16];        
+        end
+    endfunction
+
+    function [23:0] truncate24;
+        input [31:0] in;
+        begin
+            truncate24 = in[0 +: 24];        
+        end
+    endfunction
+
+    function [15:0] clampTexture;
+        input [23:0] texCoord;
+        input [ 0:0] mode; 
+        begin
+            clampTexture = texCoord[0 +: 16];
+            if (mode == CLAMP_TO_EDGE)
+            begin
+                if (texCoord[23]) // Check if it lower than 0 by only checking the sign bit
+                begin
+                    clampTexture = 0;
+                end
+                else if ((texCoord >> 15) != 0) // Check if it is greater than one by checking if the integer part is unequal to zero
+                begin
+                    clampTexture = 16'h7fff;
+                end  
+            end
+        end
+    endfunction
+
+    localparam SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
 
     initial 
     begin
@@ -127,7 +126,7 @@ module FragmentPipeline
     wire depthTestLess = depthTestFragmentVal < depthTestDepthBufferVal;
     wire depthTestGreater = depthTestFragmentVal > depthTestDepthBufferVal;
     wire depthTestEqual = depthTestFragmentVal == depthTestDepthBufferVal;
-    always 
+    always @*
     begin
         case (confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE])
             ALWAYS:
@@ -157,7 +156,7 @@ module FragmentPipeline
     wire        alphaTestLess = alphaTestFragmentVal < alphaTestRefVal;
     wire        alphaTestGreater = alphaTestFragmentVal > alphaTestRefVal;
     wire        alphaTestEqual = alphaTestFragmentVal == alphaTestRefVal;
-    always 
+    always @*
     begin
         case (confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE])
             ALWAYS:

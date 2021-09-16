@@ -71,7 +71,6 @@ module Serial2AXIS
             .o_empty(fifoEmpty)
         );
 
-    // Avoid glitches on the CTS signal by register that signal. The combinatorial approach was producing small glitches when the CTS signal changes
     always @(posedge aclk)
         serial_cts <= fill < FIFO_TRESHOLD;
 

@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "RasterizerDefines.v"
-
 module RasteriCEr #(
     // The resolution of the whole screen
     parameter X_RESOLUTION = 128,
@@ -55,8 +53,11 @@ module RasteriCEr #(
     output wire [ 3:0]  dbgStreamState,
     output wire         dbgRasterizerRunning
 );
+`include "RasterizerDefines.vh"
+`include "RegisterAndDescriptorDefines.vh"
+
     // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
-    parameter FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
+    localparam FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
 
     // The bit width of the texture stream
 `ifdef UP5K

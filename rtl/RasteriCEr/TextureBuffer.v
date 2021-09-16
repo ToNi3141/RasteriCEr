@@ -20,7 +20,13 @@ module TextureBuffer #(
     parameter STREAM_WIDTH = 16,
 
     // Size in bytes in power of two
-    parameter SIZE = 14
+    parameter SIZE = 14,
+    
+    localparam SUB_PIXEL_WIDTH = 4,
+    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4,
+    localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8),
+    localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH),
+    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH
 )
 (
     input  wire                         clk,
@@ -48,11 +54,7 @@ module TextureBuffer #(
 `else
 `define RAM_MODULE DualPortRam
 `endif
-    localparam SUB_PIXEL_WIDTH = 4;
-    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4;
-    localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8);
-    localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH);
-    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH;
+`include "RegisterAndDescriptorDefines.vh"
 
     reg  [ADDR_WIDTH - 1 : 0]       memWriteAddr = 0;
     wire [STREAM_WIDTH - 1 : 0]     memReadData;
@@ -97,7 +99,7 @@ module TextureBuffer #(
     endgenerate
 
 
-    always 
+    always @*
     begin
         case (mode)
             `OP_TEXTURE_STREAM_MODE_32x32: // 32x32px texture
