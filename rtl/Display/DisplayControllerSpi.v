@@ -63,6 +63,29 @@ module DisplayControllerSpi #(
     localparam READ_DATA = 2;
     localparam WAIT_FOR_FIRST_BYTE = 3;
 
+    localparam AXIS_WAIT_FOR_START = 0;
+    localparam AXIS_TRANSFER = 1;
+
+    localparam WAIT_FOR_START = 0;
+    localparam WAIT_FOR_DATA = 1;
+    localparam SERIALIZE_DATA = 2;
+
+    reg [3:0] stateBufferReq;
+    reg [3:0] stateAxis;
+
+    reg [SERIALIZER_WORDWIDH - 1:0] serializerCache; // While the data is scanned out, this buffer is used to fetch new data
+    reg [SERIALIZER_WORDWIDH - 1:0] serializerCacheWorking; // This is the buffer where the data is scanned out
+    reg serializerCacheEmpty; // Signal that data is copied from the fbCache to serializerCacheWorking so that a new memory request can be started
+    
+    reg [3:0] stateSerializer;
+    reg [6:0] serCount;
+    reg [$clog2(PIXEL * 2):0] pixelCount;
+    reg [$clog2(PIXEL * 2):0] streamAddr;
+
+    reg regSck;
+    reg [CLOCK_DIV - 1 : 0] serClockDiv;
+    reg enableSck;
+
     wire [15:0]             memOut;
     wire [15:0]             memIn = s_axis_tdata;
     reg                     memWr;
@@ -85,30 +108,7 @@ module DisplayControllerSpi #(
     defparam mem.MEM_SIZE_BYTES = $clog2(PIXEL * 2); // Round size to the next bigger number of two size
     defparam mem.MEM_WIDTH = 16;
 
-
-    reg [3:0] stateBufferReq;
-    reg [3:0] stateAxis;
-
-    reg [SERIALIZER_WORDWIDH - 1:0] serializerCache; // While the data is scanned out, this buffer is used to fetch new data
-    reg [SERIALIZER_WORDWIDH - 1:0] serializerCacheWorking; // This is the buffer where the data is scanned out
-    reg serializerCacheEmpty; // Signal that data is copied from the fbCache to serializerCacheWorking so that a new memory request can be started
-    
     wire bufferClean = pixelCount == PIXEL;
-
-    localparam AXIS_WAIT_FOR_START = 0;
-    localparam AXIS_TRANSFER = 1;
-
-    localparam WAIT_FOR_START = 0;
-    localparam WAIT_FOR_DATA = 1;
-    localparam SERIALIZE_DATA = 2;
-    reg [3:0] stateSerializer;
-    reg [6:0] serCount;
-    reg [$clog2(PIXEL * 2):0] pixelCount;
-    reg [$clog2(PIXEL * 2):0] streamAddr;
-
-    reg regSck;
-    reg [CLOCK_DIV - 1 : 0] serClockDiv;
-    reg enableSck;
 
     if (CLOCK_DIV == 0)
     begin

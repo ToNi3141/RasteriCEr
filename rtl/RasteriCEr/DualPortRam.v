@@ -19,7 +19,8 @@ module DualPortRam #(
     parameter MEM_SIZE_BYTES = 14, // The memory size in power of two bytes
     parameter MEM_WIDTH = 16, // Memory width in bits
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits
-    localparam MEM_SIZE = MEM_SIZE_BYTES - ($clog2(MEM_WIDTH / 8))
+    localparam MEM_SIZE = MEM_SIZE_BYTES - ($clog2(MEM_WIDTH / 8)),
+    localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )
 (
     input  wire                             clk,
@@ -37,8 +38,7 @@ module DualPortRam #(
     input  wire                             readCs,
     input  wire [MEM_SIZE - 1 : 0]          readAddr
 );
-    localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH;
-
+    
 `ifndef UNITTEST
     genvar i;
     generate 

@@ -49,6 +49,11 @@ module FrameBuffer
     // Clear color
     input  wire [15:0]  clearColor
 );
+`ifdef UP5K
+`define RAM_MODULE SinglePortRam32k
+`else
+`define RAM_MODULE DualPortRam
+`endif
     localparam NUMBER_OF_SUB_PIXELS = 4;
     localparam SUB_PIXEL_WIDTH = 4;
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH;
@@ -58,12 +63,21 @@ module FrameBuffer
     localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAME_SIZE / PIXEL_PER_BEAT;
     localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE = FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1;
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
-`ifdef UP5K
-`define RAM_MODULE SinglePortRam32k
-`else
-`define RAM_MODULE DualPortRam
-`endif
+    localparam TILECONTROL_WAIT_FOR_COMMAND = 0;
+    localparam TILECONTROL_MEMCPY = 1;
+    localparam TILECONTROL_MEMSET = 2;
+    localparam TILECONTROL_MEMCPY_INIT = 3;
 
+    // Tile Control
+    reg [5:0] stateTileControl;
+
+    wire [STROBES_PER_BEAT - 1 : 0] writeStrobe; 
+    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrWrite;
+    wire [STREAM_WIDTH - 1 : 0]     fragValIn; 
+    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrRead;
+    wire [STREAM_WIDTH - 1 : 0]     fragValOut;
+    reg  [ADDR_WIDTH - 1 : 0]       fragAddrReadDelay;
+    
     reg                             commandRunning;
     reg  [MEM_ADDR_WIDTH - 1 : 0]   counter;
     wire [MEM_ADDR_WIDTH - 1 : 0]   counterNext = counter + 1;
@@ -75,16 +89,6 @@ module FrameBuffer
     wire [STREAM_WIDTH - 1 : 0]     fbDataInBus     = (commandRunning) ? {PIXEL_PER_BEAT{clearColor}} : fragValIn;
     wire                            fbWrBus         = (commandRunning) ? fbWr : fragWriteEnable;
     wire [STROBES_PER_BEAT - 1 : 0] fbWrMaskBus     = (commandRunning) ? {PIXEL_PER_BEAT{fragMask}} : writeStrobe;
-
-    // Tile Control
-    reg [5:0] stateTileControl;
-
-    wire [STROBES_PER_BEAT - 1 : 0] writeStrobe; 
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrWrite;
-    wire [STREAM_WIDTH - 1 : 0]     fragValIn; 
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrRead;
-    wire [STREAM_WIDTH - 1 : 0]     fragValOut;
-    reg  [ADDR_WIDTH - 1 : 0]       fragAddrReadDelay;
 
     genvar i;
     generate
@@ -131,11 +135,6 @@ module FrameBuffer
     defparam ramTile.MEM_SIZE_BYTES = SIZE;
     defparam ramTile.MEM_WIDTH = STREAM_WIDTH;
     defparam ramTile.WRITE_STROBE_WIDTH = SUB_PIXEL_WIDTH;
-
-    localparam TILECONTROL_WAIT_FOR_COMMAND = 0;
-    localparam TILECONTROL_MEMCPY = 1;
-    localparam TILECONTROL_MEMSET = 2;
-    localparam TILECONTROL_MEMCPY_INIT = 3;
 
     always @(posedge clk)
     begin
