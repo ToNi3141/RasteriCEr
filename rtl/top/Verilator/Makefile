@@ -1,14 +1,17 @@
 PROJ = Rasterizer
 
+X_RESOLUTION = 640
+Y_RESOLUTION = 480
+Y_LINE_RESOLUTION = 120
+
 all: simulation 
 
 clean:
 	rm -rf obj_dir
 
 simulation:
-	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe top.v --top-module top ../../../unittest/cpp/sim_rasterizer.cpp -I../../RasteriCEr
+	verilator -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc top.v --top-module top -I../../RasteriCEr
 	-make -C obj_dir -f Vtop.mk
-	./obj_dir/Vtop
 
 .SECONDARY:
 .PHONY: all clean

@@ -127,14 +127,17 @@ Note: Because you will probably use another vivado version. The build script use
 By default it runs with __90MHz__ and renders with __90MPixel__. By side that, it uses the same configuration like the ice40 build and the same pin out (PMOD JA for the command signals and PMOD JB for the display).
 
 ## Utilization
-![Utilization screenshot](screenshots/XilinxUtilization.png)
+![Utilization screenshot](screenshots/XilinxUtilization.PNG)
 
 # How to build the simulation
-The simulation uses Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa to generate the C++ Code.
+The simulation uses Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa to generate C++ code.
 ```
 cd rtl/top/Verilator
 make
 ```
+After that, you can go to ```unittest/qtRasterizer``` and open the Qt project. This is a small simulation which renders an image (similar to the Arduino example) onto your screen.
+
+It is likely, that your verialtor installation has another path as it is configured in the ```qtRasterizer.pro``` file. Let the variable  ```VERILATOR_PATH``` point to your verilator installation and rebuild the project.
 # Add the driver to your IDE
 You can find under arduino/rasterizer an example how to use the driver. Before you can use the driver, you have to copy all files in the lib/gl directory into the arduino library directory (if you are using the Arduino IDE). If you use another IDE add this files to your build system.
 ```

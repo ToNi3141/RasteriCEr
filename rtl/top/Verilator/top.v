@@ -35,9 +35,9 @@ module top #(
     output wire         m_framebuffer_axis_tlast,
     output wire [FRAMEBUFFER_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
-    parameter X_RESOLUTION = 640;
-    parameter Y_RESOLUTION = 480;
-    parameter Y_LINE_RESOLUTION = Y_RESOLUTION / 4;
+    parameter X_RESOLUTION = `X_RESOLUTION;
+    parameter Y_RESOLUTION = `Y_RESOLUTION;
+    parameter Y_LINE_RESOLUTION = `Y_LINE_RESOLUTION;
     parameter TEXTURE_BUFFER_SIZE = 15;
 
     RasteriCEr #(.X_RESOLUTION(X_RESOLUTION),

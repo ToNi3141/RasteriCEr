@@ -1,8 +1,9 @@
 #ifndef VERILATORBUSCONNECTOR_H
 #define VERILATORBUSCONNECTOR_H
 
+#include "verilated.h"
 #include "IBusConnector.hpp"
-#include "../rtl/top/Verilator/obj_dir/Vtop.h"
+#include "Vtop.h"
 
 template <typename FBType>
 class VerilatorBusConnector : public IBusConnector
