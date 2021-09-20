@@ -67,6 +67,11 @@ public:
         m_displayList[0].clear();
         m_displayList[1].clear();
 
+        for (auto& texture : m_textures)
+        {
+            texture.inUse = false;
+        }
+
         // Unfortunately the Arduino compiler is too old and does not support C++20 default member initializers in bit fields
 #ifndef NO_PERSP_CORRECT
         m_confReg2.perspectiveCorrectedTextures = true;
@@ -149,31 +154,6 @@ public:
 
         // Triggers an upload
         uploadDisplayList();
-    }
-
-    virtual bool useTexture(const uint16_t* pixels, const uint16_t texWidth, const uint16_t texHeight) override
-    {
-        // Right now only support for square textures
-        if (texWidth != texHeight)
-            return false;
-
-        SCT op;
-        TextureStreamArg tsa;
-
-        if (texWidth == 256)
-            op = StreamCommand::TEXTURE_STREAM_256x256;
-        else if (texWidth == 128)
-            op = StreamCommand::TEXTURE_STREAM_128x128;
-        else if (texWidth == 64)
-            op = StreamCommand::TEXTURE_STREAM_64x64;
-        else if (texWidth == 32)
-            op = StreamCommand::TEXTURE_STREAM_32x32;
-        else
-            return false; // Not supported texture format
-
-        tsa.remainingPixels = texWidth * texHeight;
-        tsa.pixels = pixels;
-        return appendStreamCommand(op, tsa);
     }
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
@@ -287,9 +267,74 @@ public:
         return appendStreamCommand(StreamCommand::SET_CONF_REG2, m_confReg2);
     }
 
+    virtual std::optional<uint16_t> createTexture() override 
+    {
+        for (uint32_t i = 0; i < m_textures.size(); i++)
+        {
+            if (m_textures[i].inUse == false)
+            {
+                m_textures[i].inUse = true;
+                return {i};
+            }
+        }
+        return {};
+    }
+
+    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t*> pixels, const uint16_t texWidth, const uint16_t texHeight) override
+    {
+        if (texWidth != texHeight)
+            return false;
+        m_textures[texId].gramAddr = pixels;
+        m_textures[texId].width = texWidth;
+        m_textures[texId].height = texHeight;
+        return true;
+    }
+
+    virtual bool useTexture(const uint16_t texId) override 
+    {
+        Texture& tex = m_textures[texId];
+        if (!tex.inUse || texId == 0 || !tex.gramAddr)
+        {
+            return false;
+        }
+
+        SCT op;
+        TextureStreamArg tsa;
+
+        if (tex.width == 256)
+            op = StreamCommand::TEXTURE_STREAM_256x256;
+        else if (tex.width == 128)
+            op = StreamCommand::TEXTURE_STREAM_128x128;
+        else if (tex.width == 64)
+            op = StreamCommand::TEXTURE_STREAM_64x64;
+        else if (tex.width == 32)
+            op = StreamCommand::TEXTURE_STREAM_32x32;
+        else
+            return false; // Not supported texture format
+
+        tsa.remainingPixels = tex.width * tex.height;
+        tsa.pixels = *(tex.gramAddr);
+        return appendStreamCommand(op, tsa);
+    }
+
+    virtual bool deleteTexture(const uint16_t texId) override 
+    {
+        m_textures[texId].inUse = false;
+        m_textures[texId].gramAddr = std::shared_ptr<const uint16_t*>();
+        return true;
+    }
+
 private:
     static constexpr uint32_t HARDWARE_BUFFER_SIZE = 2048;
     static constexpr uint32_t DISPLAY_BUFFERS = 2; // Note: Right now only two are supported. Other values will not work
+
+    struct Texture
+    {
+        bool inUse;
+        std::shared_ptr<const uint16_t*> gramAddr;
+        uint16_t width;
+        uint16_t height;
+    };
 
     using List = DisplayList<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
     using ListUpload = DisplayList<HARDWARE_BUFFER_SIZE, BUS_WIDTH / 8>;
@@ -520,6 +565,9 @@ private:
     uint8_t m_backList = 1;
     uint32_t m_uploadIndexPosition = 0;
     TextureStreamArg m_textureStreamArg{nullptr, 0};
+
+    // Texture memory allocator
+    std::array<Texture, 64> m_textures;
 
     IBusConnector& m_busConnector;
 

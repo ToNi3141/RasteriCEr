@@ -21,6 +21,8 @@
 #include "Veci.hpp"
 #include <stdint.h>
 #include <array>
+#include <optional>
+#include <memory>
 #include "Vec.hpp"
 
 class IRenderer
@@ -110,13 +112,26 @@ public:
     ///    read from the display
     virtual void commit() = 0;
 
-    /// @brief This will select a texture which is used during the rendering
+    /// @brief Creates a new texture 
+    /// @return optional value with the new texture id or nothing if it was not possible to get free space
+    virtual std::optional<uint16_t> createTexture() = 0;
+
+    /// @brief This will bind a texture to a texture id
+    /// @param texId The texture id to where it has to bind the texture
     /// @param pixels The texture as RGBA4444. The address needs be kept valid during rendering, since the renderer uses this
     /// memory address to upload the texture to the internal buffer.
     /// @param texWidth The width of the texture
     /// @param texHeight The height of the texture
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool useTexture(const uint16_t* pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
+    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t*> pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
+    
+    /// @brief Activates a texture which then is used for rendering
+    /// @param texId The id of the texture to use
+    virtual bool useTexture(const uint16_t texId) = 0; 
+
+    /// @brief Deletes a texture 
+    /// @param texId The id of the texture to delete
+    virtual bool deleteTexture(const uint16_t texId) = 0;
 
     /// @brief Will clear a buffer
     /// @param frameBuffer Will clear the frame buffer
