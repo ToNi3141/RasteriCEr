@@ -437,8 +437,8 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         return;
     }
 
-    uint16_t* texMem = reinterpret_cast<uint16_t*>(malloc(width * height * 2));
-    if (texMem == nullptr) 
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(width * height * 2)], [] (const uint16_t *p) { delete [] p; });
+    if (!texMemShared)
     {
         m_error = GL_OUT_OF_MEMORY;
         return;
@@ -462,7 +462,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
                 {
                     if (colorComponents == 3)
                         tmpColor |= 0xf; // Set alpha to 0xf to make the texture opaque
-                    texMem[i / colorComponents] = tmpColor;
+                    texMemShared.get()[i / colorComponents] = tmpColor;
                     tmpColor = 0;
                     shift = 12;
                 }
@@ -471,7 +471,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         // This is the native format, just memcpy it.
         else if (type == GL_UNSIGNED_SHORT_4_4_4_4)
         {
-            memcpy(texMem, pixels, width * height * 2);
+            memcpy(texMemShared.get(), pixels, width * height * 2);
         }
         // Convert to RGBA4444
         else if (type == GL_UNSIGNED_SHORT_5_5_5_1)
@@ -479,7 +479,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             for (int32_t i = 0; i < width * height; i++)
             {
                 uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                texMem[i] =  ((tmp << 1) & 0xf000)
+                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
                         | ((tmp << 2) & 0x0f00)
                         | ((tmp << 3) & 0x00f0)
                         | ((tmp & 0x1) ? 0xf : 0x0);
@@ -490,14 +490,13 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             for (int32_t i = 0; i < width * height; i++)
             {
                 uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                texMem[i] =  ((tmp << 1) & 0xf000)
+                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
                         | ((tmp << 3) & 0x0f00)
                         | ((tmp << 4) & 0x00f0)
                         | 0x0;
             }
         }
 
-        std::shared_ptr<const uint16_t*> texMemShared = std::make_shared<const uint16_t*>(texMem);
         if (!m_renderer.updateTexture(m_boundTexture, texMemShared, width, height))
         {
             m_error = GL_INVALID_VALUE;

@@ -123,7 +123,7 @@ public:
     /// @param texWidth The width of the texture
     /// @param texHeight The height of the texture
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t*> pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
+    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
     
     /// @brief Activates a texture which then is used for rendering
     /// @param texId The id of the texture to use
