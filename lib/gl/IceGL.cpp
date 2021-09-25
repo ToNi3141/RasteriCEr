@@ -554,10 +554,10 @@ void IceGL::glGenTextures(GLsizei n, GLuint *textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        std::optional<uint16_t> ret = m_renderer.createTexture();
-        if (ret) 
+        std::pair<bool, uint16_t> ret = m_renderer.createTexture();
+        if (ret.first)
         {
-            textures[i] = *ret;
+            textures[i] = ret.second;
         }
         else
         {

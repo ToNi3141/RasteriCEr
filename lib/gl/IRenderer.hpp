@@ -21,7 +21,7 @@
 #include "Veci.hpp"
 #include <stdint.h>
 #include <array>
-#include <optional>
+#include <utility>
 #include <memory>
 #include "Vec.hpp"
 
@@ -113,8 +113,8 @@ public:
     virtual void commit() = 0;
 
     /// @brief Creates a new texture 
-    /// @return optional value with the new texture id or nothing if it was not possible to get free space
-    virtual std::optional<uint16_t> createTexture() = 0;
+    /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
+    virtual std::pair<bool, uint16_t> createTexture() = 0;
 
     /// @brief This will bind a texture to a texture id
     /// @param texId The texture id to where it has to bind the texture

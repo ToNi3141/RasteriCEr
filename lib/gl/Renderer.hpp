@@ -266,17 +266,17 @@ public:
         return appendStreamCommand(StreamCommand::SET_CONF_REG2, m_confReg2);
     }
 
-    virtual std::optional<uint16_t> createTexture() override 
+    virtual std::pair<bool, uint16_t>  createTexture() override 
     {
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
             if (m_textures[i].inUse == false)
             {
                 m_textures[i].inUse = true;
-                return {i};
+                return {true, i};
             }
         }
-        return {};
+        return {false, 0};
     }
 
     virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) override
