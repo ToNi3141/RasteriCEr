@@ -57,7 +57,7 @@
 // triangle to the buckets. It should be faster but it is less memory efficient because a triangle is potentially saved
 // several times.
 // The BUS_WIDTH is used to calculate the alignment in the display list.
-template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t LINE_RESOLUTION = 128, uint16_t BUS_WIDTH = 32>
+template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t LINE_RESOLUTION = 128, uint16_t BUS_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class Renderer : public IRenderer
 {
 public:
@@ -578,7 +578,7 @@ private:
     TextureStreamArg m_textureStreamArg{nullptr, 0, 0};
 
     // Texture memory allocator
-    std::array<Texture, 64> m_textures;
+    std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
 
     IBusConnector& m_busConnector;
 
