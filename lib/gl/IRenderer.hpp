@@ -116,10 +116,9 @@ public:
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
     virtual std::pair<bool, uint16_t> createTexture() = 0;
 
-    /// @brief This will bind a texture to a texture id
-    /// @param texId The texture id to where it has to bind the texture
-    /// @param pixels The texture as RGBA4444. The address needs be kept valid during rendering, since the renderer uses this
-    /// memory address to upload the texture to the internal buffer.
+    /// @brief This will update the texture data of the texture with the given id
+    /// @param texId The texture id which texture has to be updated
+    /// @param pixels The texture as RGBA4444
     /// @param texWidth The width of the texture
     /// @param texHeight The height of the texture
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
@@ -127,10 +126,12 @@ public:
     
     /// @brief Activates a texture which then is used for rendering
     /// @param texId The id of the texture to use
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool useTexture(const uint16_t texId) = 0; 
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete
+    /// @return true if succeeded
     virtual bool deleteTexture(const uint16_t texId) = 0;
 
     /// @brief Will clear a buffer
