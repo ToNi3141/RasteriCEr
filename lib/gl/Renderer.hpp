@@ -57,7 +57,7 @@
 // triangle to the buckets. It should be faster but it is less memory efficient because a triangle is potentially saved
 // several times.
 // The BUS_WIDTH is used to calculate the alignment in the display list.
-template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t LINE_RESOLUTION = 128, uint16_t BUS_WIDTH = 32>
+template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t LINE_RESOLUTION = 128, uint16_t BUS_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class Renderer : public IRenderer
 {
 public:
@@ -66,6 +66,11 @@ public:
     {
         m_displayList[0].clear();
         m_displayList[1].clear();
+
+        for (auto& texture : m_textures)
+        {
+            texture.inUse = false;
+        }
 
         // Unfortunately the Arduino compiler is too old and does not support C++20 default member initializers in bit fields
 #ifndef NO_PERSP_CORRECT
@@ -104,7 +109,7 @@ public:
 
         triangleConf.triangleStaticColor = convertColor(color);
 
-        bool retVal = appendStreamCommand(m_displayList[m_backList], StreamCommand::TRIANGLE_FULL, triangleConf);
+        bool retVal = appendStreamCommand(StreamCommand::TRIANGLE_FULL, triangleConf);
         // Should have a really low performance impact to trigger a upload after each triangle...
         uploadDisplayList();
         return retVal;
@@ -151,31 +156,6 @@ public:
         uploadDisplayList();
     }
 
-    virtual bool useTexture(const uint16_t* pixels, const uint16_t texWidth, const uint16_t texHeight) override
-    {
-        // Right now only support for square textures
-        if (texWidth != texHeight)
-            return false;
-
-        SCT op;
-        TextureStreamArg tsa;
-
-        if (texWidth == 256)
-            op = StreamCommand::TEXTURE_STREAM_256x256;
-        else if (texWidth == 128)
-            op = StreamCommand::TEXTURE_STREAM_128x128;
-        else if (texWidth == 64)
-            op = StreamCommand::TEXTURE_STREAM_64x64;
-        else if (texWidth == 32)
-            op = StreamCommand::TEXTURE_STREAM_32x32;
-        else
-            return false; // Not supported texture format
-
-        tsa.remainingPixels = texWidth * texHeight;
-        tsa.pixels = pixels;
-        return appendStreamCommand(op, tsa);
-    }
-
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
         const SCT opColorBuffer = StreamCommand::FRAMEBUFFER_MEMSET | StreamCommand::FRAMEBUFFER_COLOR;
@@ -206,13 +186,12 @@ public:
 
     virtual bool setClearColor(const Vec4i& color) override
     {
-        return appendStreamCommand(m_displayList[m_backList],
-                                   StreamCommand::SET_COLOR_BUFFER_CLEAR_COLOR, convertColor(color));
+        return appendStreamCommand(StreamCommand::SET_COLOR_BUFFER_CLEAR_COLOR, convertColor(color));
     }
 
     virtual bool setClearDepth(uint16_t depth) override
     {
-        return appendStreamCommand(m_displayList[m_backList], StreamCommand::SET_DEPTH_BUFFER_CLEAR_DEPTH, depth);
+        return appendStreamCommand(StreamCommand::SET_DEPTH_BUFFER_CLEAR_DEPTH, depth);
     }
 
     virtual bool setDepthMask(const bool flag) override
@@ -287,9 +266,76 @@ public:
         return appendStreamCommand(StreamCommand::SET_CONF_REG2, m_confReg2);
     }
 
+    virtual std::pair<bool, uint16_t>  createTexture() override 
+    {
+        for (uint32_t i = 0; i < m_textures.size(); i++)
+        {
+            if (m_textures[i].inUse == false)
+            {
+                m_textures[i].inUse = true;
+                return {true, i};
+            }
+        }
+        return {false, 0};
+    }
+
+    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) override
+    {
+        if (texWidth != texHeight)
+            return false;
+        m_textures[texId].gramAddr = pixels;
+        m_textures[texId].width = texWidth;
+        m_textures[texId].height = texHeight;
+        return true;
+    }
+
+    virtual bool useTexture(const uint16_t texId) override 
+    {
+        Texture& tex = m_textures[texId];
+        if (!tex.inUse || texId == 0 || !tex.gramAddr)
+        {
+            return false;
+        }
+
+        SCT op;
+        TextureStreamArg tsa;
+
+        if (tex.width == 256)
+            op = StreamCommand::TEXTURE_STREAM_256x256;
+        else if (tex.width == 128)
+            op = StreamCommand::TEXTURE_STREAM_128x128;
+        else if (tex.width == 64)
+            op = StreamCommand::TEXTURE_STREAM_64x64;
+        else if (tex.width == 32)
+            op = StreamCommand::TEXTURE_STREAM_32x32;
+        else
+            return false; // Not supported texture format
+
+        tsa.texSize = tex.width * tex.height;
+        tsa.counter = 0;
+        tsa.pixels = tex.gramAddr;
+
+        return appendStreamCommand<TextureStreamArg, true>(op, tsa);
+    }
+
+    virtual bool deleteTexture(const uint16_t texId) override 
+    {
+        m_textures[texId].inUse = false;
+        m_textures[texId].gramAddr = std::shared_ptr<const uint16_t>();
+        return true;
+    }
+
 private:
     static constexpr uint32_t HARDWARE_BUFFER_SIZE = 2048;
     static constexpr uint32_t DISPLAY_BUFFERS = 2; // Note: Right now only two are supported. Other values will not work
+
+    struct Texture
+    {
+        bool inUse;
+        std::shared_ptr<const uint16_t> gramAddr;
+        uint16_t width;
+        uint16_t height;
+    };
 
     using List = DisplayList<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
     using ListUpload = DisplayList<HARDWARE_BUFFER_SIZE, BUS_WIDTH / 8>;
@@ -338,10 +384,12 @@ private:
     };
     using SCT = typename StreamCommand::StreamCommandType;
 
-    struct TextureStreamArg
+    class TextureStreamArg
     {
-        const uint16_t* pixels;
-        int32_t remainingPixels;
+    public:
+        std::shared_ptr<const uint16_t> pixels;
+        int32_t texSize;
+        int32_t counter;
     };
 
     static uint16_t convertColor(const Vec4i color)
@@ -376,12 +424,11 @@ private:
         if (frontList.state() == List::State::TRANSFERRING)
         {
             // First check if an texture upload is pending. If so, finish the upload first
-            if (m_textureStreamArg.remainingPixels > 0)
+            if (m_textureStreamArg.counter != m_textureStreamArg.texSize)
             {
-                m_busConnector.writeData(reinterpret_cast<const uint8_t*>(m_textureStreamArg.pixels), HARDWARE_BUFFER_SIZE);
-                static constexpr uint32_t PIXEL_INC = (HARDWARE_BUFFER_SIZE / sizeof(m_textureStreamArg.pixels[0]));
-                m_textureStreamArg.pixels += PIXEL_INC;
-                m_textureStreamArg.remainingPixels -= PIXEL_INC;
+                m_busConnector.writeData(reinterpret_cast<const uint8_t*>((m_textureStreamArg.pixels.get()) + m_textureStreamArg.counter), HARDWARE_BUFFER_SIZE);
+                static constexpr uint32_t PIXEL_INC = (HARDWARE_BUFFER_SIZE / sizeof((m_textureStreamArg.pixels.get())[0]));
+                m_textureStreamArg.counter += PIXEL_INC;
                 return true;
             }
 
@@ -421,19 +468,19 @@ private:
                     break;
                 case StreamCommand::TEXTURE_STREAM:
                 {
-                    // Save texture upload argument and check if we have to reupload the texture
-                    TextureStreamArg curr = m_textureStreamArg;
-                    m_textureStreamArg = *(frontList.template getNext<TextureStreamArg>());
-                    if ((m_textureStreamArg.pixels + m_textureStreamArg.remainingPixels) == curr.pixels)
+                    // Read texture stream argument
+                    TextureStreamArg *dlArg = frontList.template getNext<TextureStreamArg>();
+                    // Check if the newly read argument has another texture than the current active one
+                    if (m_textureStreamArg.pixels == dlArg->pixels)
                     {
-                        // The texture is already on the device buffer, so fast forward
-                        m_textureStreamArg.pixels += m_textureStreamArg.remainingPixels;
-                        m_textureStreamArg.remainingPixels = 0;
-                        // and discard command
+                        // If this is not the case, we can safely discard this command, because the texture is already in the buffer
                         m_displayListUpload.template remove<SCT>();
                     }
                     else
                     {
+                        // If this is not the case, set the newly read texture as the new stream texture
+                        m_textureStreamArg = *(dlArg);
+
                         // Upload texture
                         leaveLoop = true;
 
@@ -442,6 +489,14 @@ private:
                         // We can also iterate now thru the triangles to check, if a triangle is visible in this line till the next upload command is comming
                         // if no triangle is visible, then we can also discard this command and just upload the next.
                     }
+                    // In the last iteration, we don't require the texture anymore. Unfortunately the DisplayList is discarded as a whole,
+                    // and is not calling the destructors of the objects it contains. Therefor we have to do it here manually so the shared_ptr
+                    // knows that this pointer is not required anymore and can delete the texture (if this was the last place, where this pointer was used)
+                    if (m_uploadIndexPosition == 0)
+                    {
+                        (*dlArg).~TextureStreamArg();
+                    }
+
                 }
                     break;
                 case StreamCommand::SET_REG:
@@ -457,11 +512,11 @@ private:
                 }
             }
 
-            m_busConnector.startColorBufferTransfer(m_uploadIndexPosition);
             m_busConnector.writeData(m_displayListUpload.getMemPtr(), m_displayListUpload.getSize());
 
             if (frontList.atEnd())
             {
+                m_busConnector.startColorBufferTransfer(m_uploadIndexPosition);
                 frontList.resetGet();
                 if (m_uploadIndexPosition == 0)
                 {
@@ -476,36 +531,37 @@ private:
         return false;
     }
 
-    template <typename TDisplayList, typename TArg>
-    bool appendStreamCommand(TDisplayList& displayList, const SCT op, const TArg& arg)
+    template <typename TArg, bool CallConstructor = false>
+    bool appendStreamCommand(const SCT op, const TArg& arg)
     {
-        SCT *opDl = displayList.template create<SCT>();
-        TArg *argDl = displayList.template create<TArg>();
+        SCT *opDl = m_displayList[m_backList].template create<SCT>();
+        TArg *argDl = m_displayList[m_backList].template create<TArg>();
 
         if (!(opDl && argDl))
         {
             if (opDl)
             {
-                displayList.template remove<SCT>();
+                m_displayList[m_backList].template remove<SCT>();
             }
 
             if (argDl)
             {
-                displayList.template remove<TArg>();
+                m_displayList[m_backList].template remove<TArg>();
             }
             // Out of memory error
             return false;
         }
 
+        // This is an optimization. Most of the time, a constructor call is not necessary and will just take a 
+        // significant amount of CPU time. So, if it is not required, we omit it.
+        if constexpr (CallConstructor)
+        {
+            new (argDl) TArg();
+        }
+
         *opDl = op;
         *argDl = arg;
         return true;
-    }
-
-    template <typename TArg>
-    bool appendStreamCommand(const SCT op, const TArg& arg)
-    {
-        return appendStreamCommand(m_displayList[m_backList], op, arg);
     }
 
     template <typename TDisplayList>
@@ -519,7 +575,10 @@ private:
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
     uint32_t m_uploadIndexPosition = 0;
-    TextureStreamArg m_textureStreamArg{nullptr, 0};
+    TextureStreamArg m_textureStreamArg{nullptr, 0, 0};
+
+    // Texture memory allocator
+    std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
 
     IBusConnector& m_busConnector;
 

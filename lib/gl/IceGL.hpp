@@ -119,14 +119,6 @@ public:
     void commit();
 
 private:
-    struct Texture
-    {
-        bool inUse;
-        uint16_t* gramAddr;
-        GLenum internalFormat;
-        GLsizei width;
-        GLsizei height;
-    };
 
     static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH = 16;
     static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH = 4;
@@ -189,10 +181,8 @@ private:
     // Cull mode
     bool m_enableCulling = false;
     GLenum m_cullMode = GL_BACK;
-    
-    // Texture memory allocator
-    std::array<Texture, 64> m_textures;
 
+    // Errors
     GLint m_error = GL_NO_ERROR;
 };
 

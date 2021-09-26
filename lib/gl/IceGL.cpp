@@ -24,14 +24,8 @@
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
 {
-    for (auto& texture : m_textures)
-    {
-        texture.inUse = false;
-        texture.gramAddr = nullptr;
-    }
-
-    // Texture 0 has a special meaning. Set texture 0 to in use to avoid that this texture will be allocated
-    m_textures[0].inUse = true;
+    // Preallocate the first texture. This is the default texture and it also can't be deleted.
+    m_renderer.createTexture();
 
     m_m.identity();
     m_p.identity();
@@ -443,14 +437,12 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         return;
     }
 
-    m_textures[m_boundTexture].gramAddr = reinterpret_cast<uint16_t*>(malloc(width * height * 2));
-    if (m_textures[m_boundTexture].gramAddr == nullptr)
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(width * height * 2)], [] (const uint16_t *p) { delete [] p; });
+    if (!texMemShared)
     {
         m_error = GL_OUT_OF_MEMORY;
         return;
     }
-    m_textures[m_boundTexture].width = width;
-    m_textures[m_boundTexture].height = height;
 
     if (pixels != nullptr)
     {
@@ -470,7 +462,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
                 {
                     if (colorComponents == 3)
                         tmpColor |= 0xf; // Set alpha to 0xf to make the texture opaque
-                    m_textures[m_boundTexture].gramAddr[i / colorComponents] = tmpColor;
+                    texMemShared.get()[i / colorComponents] = tmpColor;
                     tmpColor = 0;
                     shift = 12;
                 }
@@ -479,7 +471,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         // This is the native format, just memcpy it.
         else if (type == GL_UNSIGNED_SHORT_4_4_4_4)
         {
-            memcpy(m_textures[m_boundTexture].gramAddr, pixels, width * height * 2);
+            memcpy(texMemShared.get(), pixels, width * height * 2);
         }
         // Convert to RGBA4444
         else if (type == GL_UNSIGNED_SHORT_5_5_5_1)
@@ -487,7 +479,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             for (int32_t i = 0; i < width * height; i++)
             {
                 uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                m_textures[m_boundTexture].gramAddr[i] =  ((tmp << 1) & 0xf000)
+                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
                         | ((tmp << 2) & 0x0f00)
                         | ((tmp << 3) & 0x00f0)
                         | ((tmp & 0x1) ? 0xf : 0x0);
@@ -498,11 +490,17 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             for (int32_t i = 0; i < width * height; i++)
             {
                 uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                m_textures[m_boundTexture].gramAddr[i] =  ((tmp << 1) & 0xf000)
+                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
                         | ((tmp << 3) & 0x0f00)
                         | ((tmp << 4) & 0x00f0)
                         | 0x0;
             }
+        }
+
+        if (!m_renderer.updateTexture(m_boundTexture, texMemShared, width, height))
+        {
+            m_error = GL_INVALID_VALUE;
+            return;
         }
 
         // Rebind texture to update the rasterizer with the new texture meta information
@@ -556,18 +554,12 @@ void IceGL::glGenTextures(GLsizei n, GLuint *textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        bool foundFreeSpace = false;
-        for (uint32_t j = 0; j < m_textures.size(); j++)
+        std::pair<bool, uint16_t> ret = m_renderer.createTexture();
+        if (ret.first)
         {
-            if (m_textures[j].inUse == false)
-            {
-                m_textures[j].inUse = true;
-                textures[i] = j;
-                foundFreeSpace = true;
-                break;
-            }
+            textures[i] = ret.second;
         }
-        if (!foundFreeSpace)
+        else
         {
             // TODO: Free allocated textures to avoid leaks
             m_error = GL_OUT_OF_MEMORY;
@@ -588,12 +580,11 @@ void IceGL::glDeleteTextures(GLsizei n, const GLuint *textures)
     for (GLsizei i = 0; i < n; i++)
     {
         // From the specification: glDeleteTextures silently ignores 0's and names that do not correspond to existing textures.
-        if (textures[i] != 0)
+        if (textures[i] != 0) 
         {
-            m_textures[textures[i]].inUse = false;
-            free(m_textures[textures[i]].gramAddr);
-            m_textures[textures[i]].gramAddr = nullptr;
+            m_renderer.deleteTexture(textures[i]);
         }
+        
     }
 }
 
@@ -608,19 +599,15 @@ void IceGL::glBindTexture(GLenum target, GLuint texture)
 
     m_boundTexture = texture;
 
-    if (!m_textures[m_boundTexture].inUse || (m_boundTexture == 0) || m_error != GL_NO_ERROR)
+    if (m_error == GL_NO_ERROR)
+    {
+        m_renderer.useTexture(m_boundTexture);
+    }
+    else 
     {
         // If the bound texture is 0 or if using an invalid texture, then use the default texture.
         // Assume the default texture as no texture -> disable texture unit
         glDisable(GL_TEXTURE_2D);
-    }
-
-    if (m_textures[m_boundTexture].gramAddr != nullptr)
-    {
-        if (!m_renderer.useTexture(m_textures[texture].gramAddr, m_textures[texture].width, m_textures[texture].height))
-        {
-            m_error = GL_INVALID_VALUE;
-        }
     }
 }
 

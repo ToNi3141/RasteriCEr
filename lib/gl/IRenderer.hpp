@@ -21,6 +21,8 @@
 #include "Veci.hpp"
 #include <stdint.h>
 #include <array>
+#include <utility>
+#include <memory>
 #include "Vec.hpp"
 
 class IRenderer
@@ -110,13 +112,27 @@ public:
     ///    read from the display
     virtual void commit() = 0;
 
-    /// @brief This will select a texture which is used during the rendering
-    /// @param pixels The texture as RGBA4444. The address needs be kept valid during rendering, since the renderer uses this
-    /// memory address to upload the texture to the internal buffer.
+    /// @brief Creates a new texture 
+    /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
+    virtual std::pair<bool, uint16_t> createTexture() = 0;
+
+    /// @brief This will update the texture data of the texture with the given id
+    /// @param texId The texture id which texture has to be updated
+    /// @param pixels The texture as RGBA4444
     /// @param texWidth The width of the texture
     /// @param texHeight The height of the texture
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool useTexture(const uint16_t* pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
+    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
+    
+    /// @brief Activates a texture which then is used for rendering
+    /// @param texId The id of the texture to use
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool useTexture(const uint16_t texId) = 0; 
+
+    /// @brief Deletes a texture 
+    /// @param texId The id of the texture to delete
+    /// @return true if succeeded
+    virtual bool deleteTexture(const uint16_t texId) = 0;
 
     /// @brief Will clear a buffer
     /// @param frameBuffer Will clear the frame buffer
