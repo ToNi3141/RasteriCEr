@@ -38,7 +38,6 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/TnL.hpp \
     $${ICEGL_PATH}/Vec.hpp \
     $${ICEGL_PATH}/Veci.hpp \
-    $${ICEGL_PATH}/GRamAlloc.hpp \
     $${ICEGL_PATH}/IceGL.hpp \
     $${ICEGL_PATH}/Rasterizer.hpp \
     $${ICEGL_PATH}/Mat44.hpp \
