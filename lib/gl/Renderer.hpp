@@ -582,8 +582,6 @@ private:
 
     IBusConnector& m_busConnector;
 
-    uint16_t m_staticTriangleColor = 0xffff;
-
     struct __attribute__ ((__packed__)) ConfReg1
     {
         bool enableDepthTest : 1;

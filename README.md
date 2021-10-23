@@ -130,7 +130,7 @@ By default it runs with __90MHz__ and renders with __90MPixel__. By side that, i
 ![Utilization screenshot](screenshots/XilinxUtilization.PNG)
 
 # How to build the simulation
-The simulation uses Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa to generate C++ code.
+The simulation uses Verilator 4.200 2021-03-12 rev v4.110-43-g5022e81af (mod) to generate C++ code.
 ```
 cd rtl/top/Verilator
 make
