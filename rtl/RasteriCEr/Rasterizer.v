@@ -74,7 +74,7 @@ module Rasterizer
     // Triangle and Texture Data
     reg signed [PARAMETER_WIDTH - 1 : 0] paramMem [0 : `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH) - 1];
     reg [5:0] rasterizerCopyCounter;
-    reg [5:0] paramIndex;
+    reg [4:0] paramIndex;
     reg parameterComplete;
     
     // Rasterizer variables
@@ -86,7 +86,7 @@ module Rasterizer
     wire isInTriangleAndInBounds = isInTriangle & (x < paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH]) & (x >= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH]);
     /* verilator lint_off WIDTH */
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
-    /* verilator lint_off WIDTH */
+    /* verilator lint_on WIDTH */
 
     // Edge walker variables
     reg [5:0] edgeWalkingState;
@@ -131,18 +131,18 @@ module Rasterizer
                     if (parameterComplete)
                     begin
                         parameterComplete <= 0;
-                        tmp[16 +: 16] = s_axis_tdata;
+                        tmp[16 +: 16] = s_axis_tdata[15 : 0];
                     end
                     else
                     begin
                         parameterComplete <= 1;
-                        tmp[0 +: 16] = s_axis_tdata;
+                        tmp[0 +: 16] = s_axis_tdata[15 : 0];
                     end 
                 end
 
                 if (parameterComplete) 
                 begin
-                    paramMem[paramIndex] <= tmp;
+                    paramMem[paramIndex] <= tmp[PARAMETER_WIDTH - 1 : 0];
                 end
 
                 if (s_axis_tvalid & parameterComplete)
@@ -163,9 +163,9 @@ module Rasterizer
                 begin
                     for (i = 0; i < PARAMETERS_PER_STREAM_BEAT; i = i + 1)
                     begin
-                        paramMem[paramIndex + i] <= s_axis_tdata[PARAMETER_WIDTH * i +: PARAMETER_WIDTH];
+                        paramMem[paramIndex + i[0 +: 5]] <= s_axis_tdata[PARAMETER_WIDTH * i +: PARAMETER_WIDTH];
                     end
-                    paramIndex <= paramIndex + PARAMETERS_PER_STREAM_BEAT;
+                    paramIndex <= paramIndex + PARAMETERS_PER_STREAM_BEAT[0 +: 5];
 
                     if (s_axis_tlast)
                     begin
